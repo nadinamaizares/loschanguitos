@@ -1,4 +1,4 @@
--- =============================================================================
+﻿-- =============================================================================
 --  POLLERIA - Datos iniciales + Vistas
 --  Ejecutar despues de 01_schema.sql
 --     mysql -u root polleria < 02_seed_y_vistas.sql
@@ -44,10 +44,16 @@ JOIN 002_categorias c ON c.c002_descripcion = p.cat
 ORDER BY p.id;
 
 -- -----------------------------------------------------------------------------
--- Usuario admin de prueba
+-- Usuarios de prueba
 -- -----------------------------------------------------------------------------
+-- El hash de abajo es un bcrypt REAL (generado con password_hash), porque con
+-- el que habia antes (de relleno) el login NUNCA iba a funcionar.
+--   admin    / polleria2024   (rol admin)
+--   vendedor / vendedor2024   (rol vendedor)
+-- IMPORTANTE: cambiar estas claves apenas se ponga en produccion.
 INSERT INTO 001_usuarios (c001_nombre, c001_usuario, c001_password_hash, c001_rol) VALUES
-  ('Administrador', 'admin', '$2b$10$rQ8Zx5Yy5Z5Yy5Z5Yy5Z5uJ5Yy5Z5Yy5Z5Yy5Z5Yy5Z5Yy5Z5Yy5Z5Y', 'admin')
+  ('Administrador', 'admin',    '$2y$10$kFYu0Meu4yMz5GrLf4GEKuYomAtM.L0GSHk70n0OFz1NXybmOhPMG', 'admin'),
+  ('Vendedor',      'vendedor', '$2y$10$Fm6ViNFp2rLmDmVAGQ2dAOsExkFa16WM3KGtXI51yOhClaS7KxCTK', 'vendedor')
 ON DUPLICATE KEY UPDATE c001_nombre = VALUES(c001_nombre);
 
 -- =============================================================================

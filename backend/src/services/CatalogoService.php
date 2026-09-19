@@ -16,6 +16,7 @@ class CatalogoService
                     p.c003_unidad      AS unidad,
                     p.c003_precio_kg   AS precio,
                     p.c003_stock       AS stock,
+                    p.c003_stock_minimo AS stock_minimo,
                     c.c002_id          AS categoria_id,
                     c.c002_descripcion AS categoria
                FROM 003_productos p
@@ -111,6 +112,56 @@ class CatalogoService
         return [
             'producto_id' => (int)Db::conn()->lastInsertId(),
             'producto'    => $descr,
+        ];
+    }
+
+    /**
+     * Edita un producto (precio, nombre, categoria, unidad, stock minimo).
+     * El stock NO se toca aca: eso va por la pantalla de Stock.
+     */
+    public static function actualizarProducto($id, $data)
+    {
+        $id = Input::entero($id, 'producto_id');
+
+        $existe = Db::selectOne(
+            "SELECT c003_id FROM 003_productos WHERE c003_id = ? AND c003_activo = 1",
+            [$id]
+        );
+        if ($existe === null) {
+            Response::error('Producto no encontrado', 404);
+        }
+
+        $catId  = Input::entero(Input::requerido($data, 'categoria_id'), 'categoria_id');
+        $descr  = trim((string)Input::requerido($data, 'producto'));
+        $unidad = Input::opcional($data, 'unidad', 'kg');
+        $precio = Input::decimal(Input::requerido($data, 'precio'), 'precio');
+        $minimo = Input::decimal(Input::opcional($data, 'stock_minimo', 0), 'stock_minimo');
+
+        if ($descr === '') {
+            Response::error('El nombre no puede estar vacio', 422);
+        }
+        if (!in_array($unidad, ['kg', 'unidad'], true)) {
+            Response::error("La unidad debe ser 'kg' o 'unidad'", 422);
+        }
+        if ($precio < 0) {
+            Response::error('El precio no puede ser negativo', 422);
+        }
+
+        Db::execute(
+            "UPDATE 003_productos
+                SET c003_categoria_id = ?,
+                    c003_descripcion  = ?,
+                    c003_unidad       = ?,
+                    c003_precio_kg    = ?,
+                    c003_stock_minimo = ?
+              WHERE c003_id = ?",
+            [$catId, $descr, $unidad, $precio, $minimo, $id]
+        );
+
+        return [
+            'producto_id' => $id,
+            'producto'    => $descr,
+            'precio'      => $precio,
         ];
     }
 }

@@ -65,10 +65,8 @@ class FiadoService
     /** Registra un pago ("el cliente dejo $5000 de la libreta"). */
     public static function pagar($data)
     {
-        $cfg     = require __DIR__ . '/../../config.php';
-        $usuario = isset($data['usuario_id'])
-            ? Input::entero($data['usuario_id'], 'usuario_id')
-            : $cfg['usuario_default_id'];
+        // El usuario que registra el pago es el de la sesion (ver Auth.php).
+        $usuario = Auth::id();
 
         $fiadoId = Input::entero(Input::requerido($data, 'fiado_id'), 'fiado_id');
         $monto   = Input::decimal(Input::requerido($data, 'monto'), 'monto');

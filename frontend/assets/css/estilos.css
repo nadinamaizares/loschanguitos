@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    Polleria - Estilos
    Paleta calida, pensada para pantalla tactil de mostrador: botones grandes,
    texto legible a distancia y numeros bien visibles (es lo que se usa mientras
@@ -136,6 +136,9 @@ th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--gr
 th { font-size: 13px; text-transform: uppercase; letter-spacing: .4px; color: var(--gris); }
 tbody tr:hover { background: #faf6f0; }
 .num { text-align: right; font-variant-numeric: tabular-nums; }
+.acciones { text-align: right; width: 1%; white-space: nowrap; }
+tbody tr.editando { background: #fff4e5; }
+.form-editando { box-shadow: 0 0 0 2px var(--naranja), var(--sombra); }
 .vacio { text-align: center; color: var(--gris); padding: 32px; font-style: italic; }
 
 /* ---------- Pestanas de categoria (pantalla de venta) ---------- */
@@ -183,7 +186,18 @@ tbody tr:hover { background: #faf6f0; }
   border-bottom: 1px solid var(--gris-cla);
 }
 .carrito .item .nom { flex: 1; font-size: 14px; }
-.carrito .item input { width: 78px; padding: 7px; text-align: right; }
+.carrito .item .aviso-stock { color: #b3261e; }
+.carrito .item input.peso {
+  width: 92px;
+  padding: 7px 8px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.carrito .item .unidad {
+  color: var(--gris);
+  font-size: 13px;
+  min-width: 18px;
+}
 .carrito .item .sub { font-weight: 700; min-width: 90px; text-align: right; }
 .carrito .item .quitar {
   background: none; border: none; color: var(--rojo);
@@ -225,6 +239,9 @@ tbody tr:hover { background: #faf6f0; }
 .etiqueta.parcial   { background: #fdf3e0; color: var(--ambar); }
 .etiqueta.pagado    { background: #e6f4ea; color: var(--verde); }
 .etiqueta.contado   { background: #e7f0fb; color: #1b5e9c; }
+.etiqueta.efectivo  { background: #e7f0fb; color: #1b5e9c; }
+.etiqueta.virtual   { background: #ede7fb; color: #5b23a5; }
+.etiqueta.tarjeta   { background: #e6f4ee; color: #157a4a; }
 .etiqueta.fiado     { background: #fdf3e0; color: var(--ambar); }
 
 /* ---------- Indicadores (cierre de caja) ---------- */
@@ -242,3 +259,54 @@ tbody tr:hover { background: #faf6f0; }
 .indicador.ambar  { border-left-color: var(--ambar); }
 
 .cargando { text-align: center; color: var(--gris); padding: 20px; }
+/* =============================================================================
+   LOGIN y barra de usuario
+   ============================================================================= */
+.pantalla-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f0ea;
+}
+.caja-login {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.10);
+  text-align: center;
+}
+.caja-login h1 {
+  font-size: 22px;
+  margin: 8px 0 2px;
+}
+.caja-login .subtitulo {
+  margin-bottom: 22px;
+}
+.caja-login form { text-align: left; }
+.logo-login { font-size: 48px; line-height: 1; }
+.error-login {
+  margin-top: 12px;
+  color: #b00020;
+  font-size: 14px;
+  text-align: center;
+  min-height: 18px;
+  visibility: hidden;
+}
+.error-login.visible { visibility: visible; }
+
+/* Usuario logueado en la barra superior */
+.usuario-box {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+}
+.usuario-nombre {
+  font-size: 14px;
+  color: #444;
+  white-space: nowrap;
+}

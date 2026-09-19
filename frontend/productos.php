@@ -1,27 +1,32 @@
 <?php
-/** Productos: ver catalogo y dar de alta productos nuevos. */
+/**
+ * Productos: ver catalogo, dar de alta y editar (precio) productos, clientes y usuarios.
+ *
+ * Solo el admin ve las altas. El vendedor que entre a esta URL igual no ve los
+ * formularios (y aunque los viera, la API le responde 403: el permiso se valida
+ * en el backend, no aca).
+ */
 $titulo = 'Productos';
 require __DIR__ . '/paginas/layout.php';
+$esAdmin = ($usuarioActual['rol'] === 'admin');
 ?>
-
 <h1>Productos</h1>
-<p class="subtitulo">El catálogo de lo que vendés y a qué precio.</p>
-
+<p class="subtitulo">El catalogo de lo que vendes y a que precio. Toca <strong>Editar</strong> para cambiar el precio cuando sube.</p>
 <div class="grilla grilla-2">
-
  <div>
     <div class="tarjeta">
-      <h2>📋 Catálogo</h2>
+      <h2>Catalogo</h2>
       <div id="tabla"><div class="cargando">Cargando...</div></div>
     </div>
  </div>
-
  <div>
-    <div class="tarjeta">
-      <h2>➕ Producto nuevo</h2>
+<?php if ($esAdmin): ?>
+    <div class="tarjeta" id="tarjeta-producto">
+      <h2 id="h-producto">Producto nuevo</h2>
       <form id="f-nuevo">
+        <input type="hidden" id="p-id" value="">
         <div class="campo">
-          <label>Categoría</label>
+          <label>Categoria</label>
           <select id="p-categoria" required></select>
         </div>
         <div class="campo">
@@ -42,30 +47,66 @@ require __DIR__ . '/paginas/layout.php';
           </div>
         </div>
         <div class="campo">
-          <label>Stock mínimo (para que te avise)</label>
+          <label>Stock minimo (para que te avise)</label>
           <input type="number" step="0.001" min="0" id="p-minimo" value="0">
         </div>
-        <button type="submit" class="btn btn-primario btn-grande">Crear producto</button>
+        <button type="submit" class="btn btn-primario btn-grande" id="btn-guardar-prod">Crear producto</button>
+        <button type="button" class="btn btn-gris btn-chico" id="btn-cancelar-prod" style="margin-top:8px;width:100%;display:none">
+          Cancelar edicion
+        </button>
       </form>
     </div>
-
     <div class="tarjeta">
-      <h2>👤 Cliente nuevo</h2>
+      <h2>Cliente nuevo</h2>
       <form id="f-cliente">
         <div class="campo">
           <label>Nombre</label>
           <input type="text" id="cl-nombre" required placeholder="Ej: Don Ramirez">
         </div>
         <div class="campo">
-          <label>Teléfono (opcional)</label>
+          <label>Telefono (opcional)</label>
           <input type="text" id="cl-telefono" placeholder="11-5555-1234">
         </div>
         <button type="submit" class="btn btn-naranja btn-grande">Crear cliente</button>
       </form>
     </div>
+    <div class="tarjeta">
+      <h2>Usuario nuevo</h2>
+      <form id="f-usuario">
+        <div class="campo">
+          <label>Nombre y apellido</label>
+          <input type="text" id="u-nombre" required placeholder="Ej: Juan Perez">
+        </div>
+        <div class="fila">
+          <div class="campo">
+            <label>Usuario (para entrar)</label>
+            <input type="text" id="u-usuario" required placeholder="Ej: juan">
+          </div>
+          <div class="campo">
+            <label>Rol</label>
+            <select id="u-rol">
+              <option value="vendedor">Vendedor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+        </div>
+        <div class="campo">
+          <label>Contrasena (minimo 6 caracteres)</label>
+          <input type="password" id="u-password" required minlength="6" placeholder="••">
+        </div>
+        <button type="submit" class="btn btn-primario btn-grande">Crear usuario</button>
+      </form>
+    </div>
+<?php else: ?>
+    <div class="tarjeta">
+      <h2>Solo consulta</h2>
+      <p class="subtitulo">Tu usuario es <strong>vendedor</strong>: podes ver el
+      catalogo, pero dar de alta productos, clientes y usuarios es tarea del
+      administrador.</p>
+    </div>
+<?php endif; ?>
  </div>
-
 </div>
-
+<script>const ES_ADMIN = <?= $esAdmin ? 'true' : 'false' ?>;</script>
 <script src="assets/js/productos.js"></script>
 <?php require __DIR__ . '/paginas/pie.php'; ?>

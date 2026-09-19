@@ -112,12 +112,72 @@ function quitar(productoId) {
   dibujarCarrito();
 }
 
-function cambiarKilos(productoId, valor) {
+/** Peso para el input: siempre con punto y 3 decimales (ej. 0.350). */
+function formatoPeso(n) {
+  const v = Number(n);
+  if (!Number.isFinite(v) || v < 0) return '0.000';
+  return v.toFixed(3);
+}
+
+/**
+ * Interpreta lo que escribe el usuario.
+ * Acepta 0.350 o 0,350. Mientras está a medias ("" / "." / "0.") no pisa el texto.
+ */
+function parsePeso(valor) {
+  const s = String(valor == null ? '' : valor).trim().replace(',', '.');
+  if (s === '' || s === '.') return { kilos: 0, incompleto: true };
+  if (!/^\d*\.?\d*$/.test(s)) return { kilos: 0, incompleto: true };
+  const n = parseFloat(s);
+  if (!Number.isFinite(n) || n < 0) return { kilos: 0, incompleto: true };
+  return { kilos: n, incompleto: s.endsWith('.') };
+}
+
+function alEscribirPeso(input, productoId) {
+  // Solo dígitos y un separador; la coma se convierte a punto (0,350 -> 0.350).
+  let v = String(input.value).replace(/[^\d.,]/g, '').replace(/,/g, '.');
+  const partes = v.split('.');
+  if (partes.length > 2) {
+    v = partes[0] + '.' + partes.slice(1).join('');
+  }
+  const idx = v.indexOf('.');
+  if (idx >= 0 && v.length - idx - 1 > 3) {
+    v = v.slice(0, idx + 4);
+  }
+  if (input.value !== v) input.value = v;
+
   const it = CARRITO.find(x => x.producto_id === productoId);
   if (!it) return;
-  // Acepta coma o punto, como lo escribe cualquiera.
-  it.kilos = parseFloat(String(valor).replace(',', '.')) || 0;
-  dibujarCarrito();
+  it.kilos = parsePeso(v).kilos;
+  actualizarLineaYTotales(it);
+}
+
+function alSalirPeso(input, productoId) {
+  const it = CARRITO.find(x => x.producto_id === productoId);
+  if (!it) return;
+  it.kilos = parsePeso(input.value).kilos;
+  input.value = formatoPeso(it.kilos);
+  actualizarLineaYTotales(it);
+}
+
+function actualizarLineaYTotales(it) {
+  const fila = document.querySelector('.item[data-pid="' + it.producto_id + '"]');
+  if (fila) {
+    const sub = fila.querySelector('.sub');
+    if (sub) sub.textContent = plata(it.kilos * it.precio);
+    const aviso = fila.querySelector('.aviso-stock');
+    if (aviso) aviso.style.display = it.kilos > it.stock ? '' : 'none';
+  }
+  actualizarTotales();
+}
+
+function actualizarTotales() {
+  const kilos = CARRITO.reduce((s, x) => s + Number(x.kilos), 0);
+  const monto = CARRITO.reduce((s, x) => s + Number(x.kilos) * x.precio, 0);
+
+  document.getElementById('total-kilos').textContent     = kg(kilos);
+  document.getElementById('total-articulos').textContent = CARRITO.length;
+  document.getElementById('total-monto').textContent     = plata(monto);
+  document.getElementById('btn-cobrar').disabled         = CARRITO.length === 0;
 }
 
 function dibujarCarrito() {
@@ -131,11 +191,14 @@ function dibujarCarrito() {
       const subtotal = it.kilos * it.precio;
       const excede = it.kilos > it.stock;
       html += `
-        <div class="item">
-          <span class="nom">${esc(it.producto)}${excede ? ' <small style="color:#b3261e">(más que el stock)</small>' : ''}</span>
-          <input type="number" step="0.1" min="0" value="${it.kilos}"
-                 onchange="cambiarKilos(${it.producto_id}, this.value)"
-                 oninput="cambiarKilos(${it.producto_id}, this.value)">
+        <div class="item" data-pid="${it.producto_id}">
+          <span class="nom">${esc(it.producto)}<small class="aviso-stock"${excede ? '' : ' style="display:none"'}> (más que el stock)</small></span>
+          <input type="text" inputmode="decimal" class="peso" value="${formatoPeso(it.kilos)}"
+                 placeholder="0.350" autocomplete="off" spellcheck="false"
+                 onfocus="this.select()"
+                 oninput="alEscribirPeso(this, ${it.producto_id})"
+                 onblur="alSalirPeso(this, ${it.producto_id})">
+          <span class="unidad">kg</span>
           <span class="sub">${plata(subtotal)}</span>
           <button class="quitar" onclick="quitar(${it.producto_id})" title="Quitar">&times;</button>
         </div>`;
@@ -143,14 +206,7 @@ function dibujarCarrito() {
     cont.innerHTML = html;
   }
 
-  // Totales
-  const kilos  = CARRITO.reduce((s, x) => s + x.kilos, 0);
-  const monto  = CARRITO.reduce((s, x) => s + x.kilos * x.precio, 0);
-
-  document.getElementById('total-kilos').textContent     = kg(kilos);
-  document.getElementById('total-articulos').textContent = CARRITO.length;
-  document.getElementById('total-monto').textContent     = plata(monto);
-  document.getElementById('btn-cobrar').disabled         = CARRITO.length === 0;
+  actualizarTotales();
 }
 
 function vaciar() {
@@ -162,8 +218,18 @@ function vaciar() {
 
 /* -------------------------------------------------------------- cobro */
 function alCambiarTipo() {
+  // De las 4 formas de pago (contado / virtual / tarjeta / fiado),
+  // solo "fiado" necesita elegir cliente.
   const esFiado = document.getElementById('tipo').value === 'fiado';
   document.getElementById('campo-cliente').style.display = esFiado ? 'block' : 'none';
+}
+
+/** El medio de pago real que guarda la base, a partir de la opcion elegida. */
+function medioDePago(formaPago) {
+  // 'contado' -> efectivo ; 'virtual' y 'tarjeta' se guardan tal cual.
+  // 'fiado' no manda medio (el backend lo fuerza a efectivo).
+  if (formaPago === 'virtual' || formaPago === 'tarjeta') return formaPago;
+  return 'efectivo';
 }
 
 async function cobrar() {
@@ -192,6 +258,7 @@ async function cobrar() {
 
   const datos = {
     tipo: tipo,
+    medio_pago: medio,
     cliente_id: cliente ? Number(cliente) : null,
     observaciones: obs || null,
     items: CARRITO.map(x => ({ producto_id: x.producto_id, kilos: x.kilos }))

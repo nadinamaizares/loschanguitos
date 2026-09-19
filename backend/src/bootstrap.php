@@ -23,7 +23,11 @@ spl_autoload_register(function ($clase) use ($raiz) {
     $relativo = substr($clase, strlen($prefijo));          // ej: "services\VentaService"
     $relativo = str_replace('\\', '/', $relativo);
 
-    foreach (["$raiz/src/$relativo.php", "$raiz/src/services/$relativo.php"] as $archivo) {
+    foreach ([
+        "$raiz/src/$relativo.php",
+        "$raiz/src/services/$relativo.php",
+        "$raiz/src/middleware/$relativo.php",
+    ] as $archivo) {
         if (is_file($archivo)) {
             require $archivo;
             return;
@@ -44,6 +48,10 @@ if ($config['debug']) {
 
 // --- Zona horaria (para DATE() y las fechas de las ventas) ---
 date_default_timezone_set('America/Argentina/Buenos_Aires');
+// --- Sesion ---
+// La API necesita saber quien esta operando (ver src/middleware/Auth.php).
+// Se arranca aca, antes de despachar cualquier ruta.
+\Polleria\Auth::iniciar();
 
 /**
  * Convierte cualquier error/excepcion no atrapada en una respuesta JSON.

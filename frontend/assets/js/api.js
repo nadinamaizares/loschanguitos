@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    api.js - Cliente de la API de la polleria.
 
    Todo el frontend habla por aca. La API responde siempre:
@@ -103,3 +103,36 @@ function avisar(mensaje, tipo) {
 function filaVacia(cols, texto) {
   return '<tr><td colspan="' + cols + '" class="vacio">' + esc(texto || 'No hay datos para mostrar') + '</td></tr>';
 }
+/* ---------- Sesion ---------- */
+/**
+ * Cierra la sesion en el servidor y manda al login.
+ * La usa el boton "Salir" de la barra superior.
+ */
+async function cerrarSesion() {
+  try {
+    await apiPost('/logout', {});
+  } catch (e) {
+    /* aunque falle, igual volvemos al login */
+  }
+  window.location.href = 'login.php';
+}
+
+/**
+ * Detecta si una respuesta vino con 401 (sesion vencida) para redirigir al
+ * login en vez de dejar la pantalla colgada con un error raro. Se engancha
+ * envolviendo el fetch una sola vez, sin tocar las funciones de arriba.
+ */
+(function vigilarSesion() {
+  const fetchOriginal = window.fetch;
+  if (!fetchOriginal) return;
+  window.fetch = async function (...args) {
+    const resp = await fetchOriginal.apply(this, args);
+    if (resp.status === 401) {
+      // La sesion no sirve: al login. (Evitamos loop si ya estamos en el login.)
+      if (!window.location.pathname.endsWith('login.php')) {
+        window.location.href = 'login.php';
+      }
+    }
+    return resp;
+  };
+})();

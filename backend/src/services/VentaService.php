@@ -23,19 +23,27 @@ class VentaService
      */
     public static function registrar($data)
     {
-        $cfg     = require __DIR__ . '/../../config.php';
-        $usuario = isset($data['usuario_id'])
-            ? Input::entero($data['usuario_id'], 'usuario_id')
-            : $cfg['usuario_default_id'];
+        // El usuario que vende es SIEMPRE el de la sesion (ya validado por
+        // Auth::exigir() en la ruta). Nunca se toma del cuerpo de la peticion.
+        $usuario = Auth::id();
 
         $tipo    = Input::requerido($data, 'tipo');
         $items   = Input::requerido($data, 'items');
         $obs     = Input::opcional($data, 'observaciones', null);
         $cliente = Input::opcional($data, 'cliente_id', null);
+        // Como se paga la venta (solo tiene sentido si es de contado):
+        //   efectivo | virtual (transferencia/QR) | tarjeta (posnet)
+        // Si es fiado, el SP lo fuerza a 'efectivo' (no entra plata).
+        $medio   = Input::opcional($data, 'medio_pago', 'efectivo');
+        if (!in_array($medio, ['efectivo', 'virtual', 'tarjeta'], true)) {
+            Response::error("El medio de pago debe ser efectivo, virtual o tarjeta", 422);
+        }
 
         if (!in_array($tipo, ['contado', 'fiado'], true)) {
             Response::error("El tipo debe ser 'contado' o 'fiado'", 422);
         }
+        // Fiar SI lo puede hacer el vendedor: es una operacion del mostrador.
+        // (No se restringe por rol a proposito.)
 
         if (!is_array($items) || count($items) === 0) {
             Response::error('La venta necesita al menos un item', 422);
@@ -75,6 +83,7 @@ class VentaService
             $tipo,
             $itemsStr,
             $obs,
+            $medio,
         ]);
     }
 
@@ -85,6 +94,7 @@ class VentaService
         return Db::select(
             "SELECT v.c005_id            AS venta_id,
                     v.c005_tipo          AS tipo,
+                    v.c005_medio_pago    AS medio_pago,
                     v.c005_total         AS total,
                     v.c005_kilos_totales AS kilos,
                     v.c005_fecha         AS fecha,
@@ -105,6 +115,7 @@ class VentaService
         $venta = Db::selectOne(
             "SELECT v.c005_id            AS venta_id,
                     v.c005_tipo          AS tipo,
+                    v.c005_medio_pago    AS medio_pago,
                     v.c005_total         AS total,
                     v.c005_kilos_totales AS kilos,
                     v.c005_fecha         AS fecha,

@@ -2,23 +2,29 @@
    ventas.js - Historial de ventas y su detalle.
    ============================================================================= */
 
+/** Muestra la forma de pago: contado (efectivo/virtual/tarjeta) o fiado. */
+function etiquetaFormaPago(v) {
+  if (v.tipo === 'fiado') return '<span class="etiqueta fiado">fiado</span>';
+  const m = v.medio_pago || 'efectivo';
+  return '<span class="etiqueta ' + m + '">' + m + '</span>';
+}
+
 async function iniciarVentas() {
   const cont = document.getElementById('tabla');
   try {
     const vs = await apiGet('/ventas?limite=50');
     if (vs.length === 0) {
-      cont.innerHTML = '<div class="vacio">Todavía no hay ventas registradas</div>';
+      cont.innerHTML = '<div class="vacio">Todavia no hay ventas registradas</div>';
       return;
     }
-
-    let html = '<table><thead><tr><th>#</th><th>Fecha</th><th>Tipo</th><th>Cliente</th>' +
+    let html = '<table><thead><tr><th>#</th><th>Fecha</th><th>Forma de pago</th><th>Cliente</th>' +
                '<th class="num">Kilos</th><th class="num">Total</th><th>Vendedor</th><th></th>' +
                '</tr></thead><tbody>';
     for (const v of vs) {
       html += '<tr>' +
         '<td>' + v.venta_id + '</td>' +
         '<td>' + fechaCorta(v.fecha) + '</td>' +
-        '<td><span class="etiqueta ' + v.tipo + '">' + v.tipo + '</span></td>' +
+        '<td>' + etiquetaFormaPago(v) + '</td>' +
         '<td>' + esc(v.cliente || '-') + '</td>' +
         '<td class="num">' + kg(v.kilos) + '</td>' +
         '<td class="num">' + plata(v.total) + '</td>' +
@@ -37,20 +43,16 @@ async function verVenta(id) {
   const caja = document.getElementById('detalle');
   const tit = document.getElementById('detalle-titulo');
   const cuerpo = document.getElementById('detalle-cuerpo');
-
   caja.style.display = 'block';
   tit.textContent = 'Cargando...';
   caja.scrollIntoView({ behavior: 'smooth' });
-
   try {
     const v = await apiGet('/ventas/' + id);
-    tit.textContent = '🧾 Venta #' + v.venta_id + ' — ' + plata(v.total);
-
+    tit.textContent = 'Venta #' + v.venta_id + ' - ' + plata(v.total);
     let html = '<p class="subtitulo">' +
-      fecha(v.fecha) + ' · <span class="etiqueta ' + v.tipo + '">' + v.tipo + '</span>' +
-      (v.cliente ? ' · Cliente: ' + esc(v.cliente) : '') +
+      fecha(v.fecha) + ' - ' + etiquetaFormaPago(v) +
+      (v.cliente ? ' - Cliente: ' + esc(v.cliente) : '') +
       '</p>';
-
     html += '<table><thead><tr><th>Producto</th><th class="num">Kilos</th>' +
             '<th class="num">Precio</th><th class="num">Subtotal</th></tr></thead><tbody>';
     for (const it of v.items) {
@@ -60,15 +62,12 @@ async function verVenta(id) {
               '<td class="num">' + plata(it.subtotal) + '</td></tr>';
     }
     html += '</tbody></table>';
-
     if (v.observaciones) {
       html += '<p><strong>Observaciones:</strong> ' + esc(v.observaciones) + '</p>';
     }
-
     cuerpo.innerHTML = html;
   } catch (e) {
     cuerpo.innerHTML = '<div class="vacio">Error: ' + esc(e.message) + '</div>';
   }
 }
-
 iniciarVentas();

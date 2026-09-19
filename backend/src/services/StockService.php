@@ -32,10 +32,8 @@ class StockService
     /** Carga mercaderia: suma kilos al stock de un producto. */
     public static function cargar($data)
     {
-        $cfg     = require __DIR__ . '/../../config.php';
-        $usuario = isset($data['usuario_id'])
-            ? Input::entero($data['usuario_id'], 'usuario_id')
-            : $cfg['usuario_default_id'];
+        // El usuario de la sesion es el que carga / ajusta (ver Auth.php).
+        $usuario = Auth::id();
 
         $producto = Input::entero(Input::requerido($data, 'producto_id'), 'producto_id');
         $cantidad = Input::decimal(Input::requerido($data, 'cantidad'), 'cantidad');
@@ -51,10 +49,8 @@ class StockService
     /** Ajuste manual (correccion) o merma. */
     public static function ajustar($data)
     {
-        $cfg     = require __DIR__ . '/../../config.php';
-        $usuario = isset($data['usuario_id'])
-            ? Input::entero($data['usuario_id'], 'usuario_id')
-            : $cfg['usuario_default_id'];
+        // El usuario de la sesion es el que carga / ajusta (ver Auth.php).
+        $usuario = Auth::id();
 
         $producto = Input::entero(Input::requerido($data, 'producto_id'), 'producto_id');
         $nuevo    = Input::decimal(Input::requerido($data, 'stock_nuevo'), 'stock_nuevo');

@@ -43,9 +43,11 @@ require __DIR__ . '/paginas/layout.php';
 
       <!-- Datos del cobro -->
       <div class="campo">
-        <label>Tipo de venta</label>
+        <label>Forma de pago</label>
         <select id="tipo">
-          <option value="contado">Contado (paga ahora)</option>
+          <option value="contado">Contado (efectivo)</option>
+          <option value="virtual">Virtual (transferencia / QR)</option>
+          <option value="tarjeta">Tarjeta (debito / credito)</option>
           <option value="fiado">Fiado (va a la libreta)</option>
         </select>
       </div>
