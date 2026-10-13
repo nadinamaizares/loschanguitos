@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 --  POLLERIA - Datos iniciales + Vistas
 --  Ejecutar despues de 01_schema.sql
 --     mysql -u root polleria < 02_seed_y_vistas.sql

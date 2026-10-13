@@ -15,8 +15,7 @@
 --    010 -> fiado_pagos   (pagos parciales que va haciendo el cliente)
 -- =============================================================================
 
--- La base se crea aparte:  CREATE DATABASE polleria;
-USE polleria;
+-- La base ya debe existir (se crea desde el panel del hosting).
 
 -- =============================================================================
 -- 001_USUARIOS - Empleados que entran al sistema
@@ -91,6 +90,7 @@ CREATE TABLE IF NOT EXISTS 005_ventas (
   c005_cliente_id      INT           NULL,          -- obligatorio si es fiado
   c005_usuario_id      INT           NOT NULL,
   c005_tipo            ENUM('contado','fiado') NOT NULL DEFAULT 'contado',
+  c005_medio_pago      ENUM('efectivo','virtual','tarjeta') NOT NULL DEFAULT 'efectivo',
   c005_total           DECIMAL(12,2) NOT NULL DEFAULT 0,
   c005_kilos_totales   DECIMAL(10,3) NOT NULL DEFAULT 0,
   c005_observaciones   VARCHAR(255)  NULL,

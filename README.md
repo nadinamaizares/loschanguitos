@@ -261,3 +261,17 @@ Los usuarios se crean desde **Productos -> Usuario nuevo** (solo admin).---
 - Ranking de productos mÃ¡s vendidos.
 - Exportar el cierre de caja a Excel/PDF.
 - EstadÃ­sticas por perÃ­odo (semana, mes).
+---
+
+## Publicar en un hosting gratis (InfinityFree)
+Los hostings gratis **no permiten** crear vistas ni procedimientos almacenados
+(phpMyAdmin tira "CREATE VIEW comando denegado" / error de sintaxis en los
+`CREATE PROCEDURE`). Por eso, a partir de esta version:
+- Las **vistas** (`v_libreta_clientes`, `v_libreta_detalle`, `v_stock_actual`,
+  `v_ventas_dia`) se reemplazaron por **consultas SQL dentro del PHP**.
+- Los **procedimientos** (`sp_registrar_venta`, `sp_cargar_stock`,
+  `sp_ajustar_stock`, `sp_pagar_fiado`) se reemplazaron por **transacciones
+  PHP** (`Db::transaction`), que garantizan lo mismo: o se hace todo, o nada.
+El sistema funciona igual en XAMPP que en InfinityFree.
+Para subir la base de datos, usar el archivo **`database/importar_infinityfree.sql`**
+(ya viene sin vistas ni procedimientos, con backticks en los nombres de tabla).

@@ -87,10 +87,11 @@ class CajaService
         $resumen['total_fiado_dia'] = (float)$resumen['fiado']['total'];
 
         // Deuda total acumulada de todos los clientes.
+        $sub = FiadoService::sqlLibretaClientes();
         $libreta = Db::selectOne(
             "SELECT COALESCE(SUM(saldo_deudor),0) AS deuda_total,
                     COUNT(CASE WHEN saldo_deudor > 0 THEN 1 END) AS clientes_con_deuda
-               FROM v_libreta_clientes"
+               FROM (" . $sub . ") AS libro"
         );
         $resumen['libreta'] = [
             'deuda_total'         => $libreta['deuda_total'],

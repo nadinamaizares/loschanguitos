@@ -1,0 +1,8 @@
+# Configuracion con contrasenas: cada entorno tiene la suya.
+# En el repo queda backend/config.example.php como modelo.
+backend/config.php
+backend/config.local.php
+
+# Exportaciones de la base con datos reales (clientes, ventas, usuarios)
+database/importar_infinityfree.sql
+database/importar_infinityfree.zip

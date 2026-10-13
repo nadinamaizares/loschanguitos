@@ -22,7 +22,11 @@ class Db
             return self::$pdo;
         }
 
-        $cfg = require __DIR__ . '/../config.php';
+        // Igual que bootstrap: preferimos config.local.php si existe.
+        $configFile = is_file(__DIR__ . '/../config.local.php')
+            ? __DIR__ . '/../config.local.php'
+            : __DIR__ . '/../config.php';
+        $cfg = require $configFile;
         $c   = $cfg['db'];
 
         $dsn = sprintf(
@@ -40,6 +44,21 @@ class Db
                 // Que los numeros vuelvan como numeros y no como texto.
                 PDO::ATTR_EMULATE_PREPARES => false,
             ]);
+
+            // Fijamos la zona horaria de la CONEXION a Argentina (-03:00).
+            // Asi NOW() y CURRENT_TIMESTAMP (las fechas de ventas, fiados,
+            // movimientos y pagos) guardan SIEMPRE hora argentina, sin
+            // importar en que zona este el servidor (XAMPP local o un
+            // hosting como InfinityFree que usa UTC).
+            //
+            // Va en try/catch: algunos hostings compartidos no dejan cambiar
+            // la zona horaria y tirarian error. Si eso pasa, seguimos igual
+            // (queda la hora del servidor, pero el sistema no se rompe).
+            try {
+                self::$pdo->exec("SET time_zone = '-03:00'");
+            } catch (PDOException $e) {
+                // sin permiso para cambiar la zona: seguimos
+            }
         } catch (PDOException $e) {
             throw new \RuntimeException(
                 'No se pudo conectar a la base de datos "polleria". ' .
@@ -78,22 +97,34 @@ class Db
         return $stmt->rowCount();
     }
 
-    /**
-     * Llama a un procedimiento almacenado que termina con un SELECT.
-     *
-     * Estos SP (sp_registrar_venta, sp_cargar_stock, ...) devuelven su
-     * resultado con un SELECT final. Hay que cerrar el cursor antes de poder
-     * hacer otra consulta en la misma conexion: de ahi el closeCursor().
-     */
-    public static function call($proc, $params = [])
+    /** Id de la ultima fila insertada (reemplaza LAST_INSERT_ID() de los SP). */
+    public static function lastInsertId()
     {
-        $marcas = implode(',', array_fill(0, count($params), '?'));
-        $stmt   = self::conn()->prepare("CALL {$proc}({$marcas})");
-        $stmt->execute($params);
+        return (int)self::conn()->lastInsertId();
+    }
 
-        $row = $stmt->fetch();
-        $stmt->closeCursor();
-
-        return $row === false ? null : $row;
+    /**
+     * Envuelve una funcion en una transaccion.
+     *
+     * Antes esto lo hacian los procedimientos almacenados (START TRANSACTION
+     * ... COMMIT/ROLLBACK). Pero los hostings gratis como InfinityFree NO
+     * dejan crear procedimientos, asi que esa logica la hacemos desde PHP.
+     * Si la funcion tira una excepcion, se hace ROLLBACK y no queda nada a
+     * medias (por ejemplo, una venta sin descontar el stock).
+     */
+    public static function transaction(callable $fn)
+    {
+        $pdo = self::conn();
+        $pdo->beginTransaction();
+        try {
+            $resultado = $fn();
+            $pdo->commit();
+            return $resultado;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 }

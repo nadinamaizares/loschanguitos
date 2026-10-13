@@ -23,6 +23,7 @@ use Polleria\StockService;
 use Polleria\VentaService;
 use Polleria\FiadoService;
 use Polleria\CajaService;
+use Polleria\ProveedorService;
 $r = new Router();
 // --- Estado de la API (util para chequear que responde) ---------------------
 $r->get('/api/ping', function () {
@@ -123,6 +124,29 @@ $r->get('/api/libreta/{clienteId}', function ($clienteId) {
 $r->post('/api/fiado/pagar', function () {
     Auth::exigir();
     Response::ok(FiadoService::pagar(Input::json()), 201);
+});
+// --- Proveedores (compras y cuenta corriente) -------------------------------
+// Recibir mercaderia y pagarle al proveedor es de mostrador (vendedor tambien).
+// Dar de alta un proveedor: solo admin, igual que los clientes.
+$r->get('/api/proveedores', function () {
+    Auth::exigir();
+    Response::ok(ProveedorService::listar());
+});
+$r->post('/api/proveedores', function () {
+    Auth::exigirAdmin();
+    Response::ok(ProveedorService::crear(Input::json()), 201);
+});
+$r->get('/api/proveedores/{id}', function ($id) {
+    Auth::exigir();
+    Response::ok(ProveedorService::detalle((int)$id));
+});
+$r->post('/api/compras', function () {
+    Auth::exigir();
+    Response::ok(ProveedorService::registrarCompra(Input::json()), 201);
+});
+$r->post('/api/proveedores/pagar', function () {
+    Auth::exigir();
+    Response::ok(ProveedorService::pagar(Input::json()), 201);
 });
 // --- Usuarios (solo admin) --------------------------------------------------
 $r->get('/api/usuarios', function () {

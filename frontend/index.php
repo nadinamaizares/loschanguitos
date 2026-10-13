@@ -82,5 +82,5 @@ require __DIR__ . '/paginas/layout.php';
 
 </div>
 
-<script src="assets/js/venta.js"></script>
+<script src="assets/js/venta.js?v=3"></script>
 <?php require __DIR__ . '/paginas/pie.php'; ?>

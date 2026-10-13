@@ -35,7 +35,11 @@ spl_autoload_register(function ($clase) use ($raiz) {
     }
 });
 
-$config = require "$raiz/config.php";
+// Config: si existe config.local.php (pruebas en XAMPP), se usa esa;
+// si no, la de produccion (InfinityFree).
+$config = is_file("$raiz/config.local.php")
+    ? require "$raiz/config.local.php"
+    : require "$raiz/config.php";
 
 // --- Errores ---
 if ($config['debug']) {

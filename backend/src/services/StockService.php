@@ -1,20 +1,42 @@
 <?php
 /**
  * Logica de negocio: stock (carga de mercaderia y ajustes).
+ *
+ * Antes usaba la vista v_stock_actual y los procedimientos sp_cargar_stock /
+ * sp_ajustar_stock. Como InfinityFree no deja crear vistas ni procedimientos,
+ * todo eso se hace ahora con SQL y transacciones desde PHP.
  */
-
 namespace Polleria;
 
 class StockService
 {
-    /** Stock actual de todos los productos (usa la vista v_stock_actual). */
+    /**
+     * Stock actual de todos los productos.
+     *
+     * Antes era la vista v_stock_actual. El "estado" sale de comparar el stock
+     * con el minimo cargado: SIN STOCK (0), BAJO (por debajo del minimo),
+     * OK (todo bien).
+     */
     public static function actual()
     {
         return Db::select(
-            "SELECT producto_id, producto, categoria, unidad, stock,
-                    stock_minimo, precio, valorizado, estado
-               FROM v_stock_actual
-           ORDER BY categoria, producto"
+            "SELECT p.c003_id        AS producto_id,
+                    p.c003_descripcion AS producto,
+                    c.c002_descripcion    AS categoria,
+                    p.c003_unidad    AS unidad,
+                    p.c003_stock     AS stock,
+                    p.c003_stock_minimo AS stock_minimo,
+                    p.c003_precio_kg AS precio,
+                    (p.c003_stock * p.c003_precio_kg) AS valorizado,
+                    CASE
+                      WHEN p.c003_stock <= 0 THEN 'SIN STOCK'
+                      WHEN p.c003_stock <= p.c003_stock_minimo THEN 'BAJO'
+                      ELSE 'OK'
+                    END AS estado
+               FROM 003_productos p
+               JOIN 002_categorias c ON c.c002_id = p.c003_categoria_id
+              WHERE p.c003_activo = 1
+           ORDER BY c.c002_descripcion, p.c003_descripcion"
         );
     }
 
@@ -22,10 +44,21 @@ class StockService
     public static function alertas()
     {
         return Db::select(
-            "SELECT producto_id, producto, categoria, stock, stock_minimo, estado
-               FROM v_stock_actual
-              WHERE estado IN ('BAJO','SIN STOCK')
-           ORDER BY estado DESC, stock ASC"
+            "SELECT p.c003_id        AS producto_id,
+                    p.c003_descripcion AS producto,
+                    c.c002_descripcion    AS categoria,
+                    p.c003_stock     AS stock,
+                    p.c003_stock_minimo AS stock_minimo,
+                    CASE
+                      WHEN p.c003_stock <= 0 THEN 'SIN STOCK'
+                      WHEN p.c003_stock <= p.c003_stock_minimo THEN 'BAJO'
+                      ELSE 'OK'
+                    END AS estado
+               FROM 003_productos p
+               JOIN 002_categorias c ON c.c002_id = p.c003_categoria_id
+              WHERE p.c003_activo = 1
+                AND p.c003_stock <= p.c003_stock_minimo
+           ORDER BY (p.c003_stock <= 0) DESC, p.c003_stock ASC"
         );
     }
 
@@ -43,7 +76,36 @@ class StockService
             Response::error('La cantidad debe ser mayor a 0', 422);
         }
 
-        return Db::call('sp_cargar_stock', [$producto, $cantidad, $usuario, $motivo]);
+        return Db::transaction(function () use ($producto, $cantidad, $usuario, $motivo) {
+            $prod = Db::selectOne(
+                "SELECT c003_id, c003_stock FROM 003_productos WHERE c003_id = ? FOR UPDATE",
+                [$producto]
+            );
+            if ($prod === null) {
+                Response::error("Producto inexistente: {$producto}", 422);
+            }
+            $antes = (float)$prod['c003_stock'];
+            $nuevo = $antes + $cantidad;
+
+            Db::execute(
+                "UPDATE 003_productos SET c003_stock = ? WHERE c003_id = ?",
+                [$nuevo, $producto]
+            );
+            Db::execute(
+                "INSERT INTO 007_movimientos
+                    (c007_producto_id, c007_usuario_id, c007_tipo, c007_cantidad,
+                     c007_stock_anterior, c007_stock_nuevo, c007_motivo)
+                 VALUES (?, ?, 'entrada', ?, ?, ?, ?)",
+                [$producto, $usuario, $cantidad, $antes, $nuevo, $motivo]
+            );
+
+            return [
+                'producto_id'    => $producto,
+                'stock_anterior' => $antes,
+                'stock_nuevo'    => $nuevo,
+                'cargado'        => $cantidad,
+            ];
+        });
     }
 
     /** Ajuste manual (correccion) o merma. */
@@ -64,7 +126,36 @@ class StockService
             Response::error('El stock no puede ser negativo', 422);
         }
 
-        return Db::call('sp_ajustar_stock', [$producto, $nuevo, $usuario, $tipo, $motivo]);
+        return Db::transaction(function () use ($producto, $nuevo, $usuario, $tipo, $motivo) {
+            $prod = Db::selectOne(
+                "SELECT c003_id, c003_stock FROM 003_productos WHERE c003_id = ? FOR UPDATE",
+                [$producto]
+            );
+            if ($prod === null) {
+                Response::error("Producto inexistente: {$producto}", 422);
+            }
+            $antes = (float)$prod['c003_stock'];
+            $dif   = $nuevo - $antes;
+
+            Db::execute(
+                "UPDATE 003_productos SET c003_stock = ? WHERE c003_id = ?",
+                [$nuevo, $producto]
+            );
+            Db::execute(
+                "INSERT INTO 007_movimientos
+                    (c007_producto_id, c007_usuario_id, c007_tipo, c007_cantidad,
+                     c007_stock_anterior, c007_stock_nuevo, c007_motivo)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [$producto, $usuario, $tipo, abs($dif), $antes, $nuevo, $motivo]
+            );
+
+            return [
+                'producto_id'    => $producto,
+                'stock_anterior' => $antes,
+                'stock_nuevo'    => $nuevo,
+                'diferencia'     => $dif,
+            ];
+        });
     }
 
     /** Historial de movimientos (entradas, salidas, ajustes, mermas). */

@@ -40,18 +40,23 @@ class CatalogoService
     /** Clientes activos, con su saldo deudor actual. */
     public static function clientes()
     {
+        // Antes esto hacia LEFT JOIN v_libreta_clientes. Como esa vista no
+        // existe en hostings gratis, calculamos el saldo con una subconsulta.
         return Db::select(
             "SELECT cl.c004_id       AS cliente_id,
                     cl.c004_nombre   AS cliente,
                     cl.c004_telefono AS telefono,
-                    COALESCE(lc.saldo_deudor, 0) AS saldo_deudor
+                    COALESCE((
+                        SELECT SUM(f.c008_monto_total - f.c008_monto_pagado)
+                          FROM 008_fiados f
+                         WHERE f.c008_cliente_id = cl.c004_id
+                           AND f.c008_estado <> 'pagado'
+                    ), 0) AS saldo_deudor
                FROM 004_clientes cl
-          LEFT JOIN v_libreta_clientes lc ON lc.cliente_id = cl.c004_id
               WHERE cl.c004_activo = 1
            ORDER BY cl.c004_nombre"
         );
     }
-
     /** Alta de cliente (para la libreta). */
     public static function crearCliente($data)
     {

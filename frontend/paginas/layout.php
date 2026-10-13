@@ -31,10 +31,10 @@ function navActiva(string $archivo, string $actual): string
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width, initial-scale=1">
  <title><?= htmlspecialchars($titulo ?? 'Inicio') ?> - Avicola Los Changuitos</title>
- <link rel="stylesheet" href="assets/css/estilos.css">
+ <link rel="stylesheet" href="assets/css/estilos2.css?v=2">
  <!-- api.js va aca, en el head: deja API_BASE y apiGet/apiPost definidos ANTES
       de que corran los scripts de cada pagina (venta.js, stock.js, ...). -->
- <script src="assets/js/api.js"></script>
+ <script src="assets/js/api.js?v=2"></script>
  <?php
  // Le pasamos al JS quien es el usuario, para ocultar lo que no le corresponde.
  // (La seguridad real esta en el backend; esto es solo para no mostrar botones
@@ -54,6 +54,7 @@ function navActiva(string $archivo, string $actual): string
  <nav>
     <a href="index.php"       <?= navActiva('index.php', $paginaActual) ?>>Vender</a>
     <a href="stock.php"       <?= navActiva('stock.php', $paginaActual) ?>>Stock</a>
+    <a href="proveedores.php" <?= navActiva('proveedores.php', $paginaActual) ?>>Proveedores</a>
     <a href="libreta.php"     <?= navActiva('libreta.php', $paginaActual) ?>>Libreta</a>
     <a href="ventas.php"      <?= navActiva('ventas.php', $paginaActual) ?>>Ventas</a>
     <a href="cierre.php"      <?= navActiva('cierre.php', $paginaActual) ?>>Cierre de caja</a>

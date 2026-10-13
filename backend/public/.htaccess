@@ -1,13 +1,13 @@
-# Si Apache tiene mod_rewrite (viene activo en XAMPP), todas las URLs que no
-# sean un archivo real se mandan a index.php. Asi las rutas quedan lindas:
-#   /polleria/backend/public/api/stock
+# Todas las URLs que no sean un archivo o carpeta real se mandan a index.php.
+# Asi las rutas quedan lindas:
+#   /api/stock
 # en vez de
-#   /polleria/backend/public/index.php/api/stock
-
+#   /index.php/api/stock
+#
+# NOTA: no ponemos RewriteBase (a proposito). Asi funciona igual en tu PC
+# (localhost/polleria/...) y en InfinityFree (en la raiz del dominio).
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /polleria/backend/public/
-
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php [QSA,L]

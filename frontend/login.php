@@ -13,8 +13,8 @@
  <meta charset="utf-8">
  <meta name="viewport" content="width=device-width, initial-scale=1">
  <title>Ingresar - Avicola Los Changuitos</title>
- <link rel="stylesheet" href="assets/css/estilos.css">
- <script src="assets/js/api.js"></script>
+ <link rel="stylesheet" href="assets/css/estilos2.css?v=2">
+ <script src="assets/js/api.js?v=2"></script>
 </head>
 <body class="pantalla-login">
  <div class="caja-login">
@@ -39,6 +39,6 @@
       <div id="error-login" class="error-login"></div>
     </form>
  </div>
- <script src="assets/js/login.js"></script>
+ <script src="assets/js/login.js?v=2"></script>
 </body>
 </html>

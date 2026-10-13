@@ -235,7 +235,12 @@ function medioDePago(formaPago) {
 async function cobrar() {
   if (CARRITO.length === 0) return;
 
-  const tipo     = document.getElementById('tipo').value;
+  // El select tiene 4 formas: contado | virtual | tarjeta | fiado.
+  // Para la base, la venta es 'contado' o 'fiado'; si es contado,
+  // 'medio' dice como se pago (efectivo / virtual / tarjeta).
+  const forma    = document.getElementById('tipo').value;
+  const tipo     = (forma === 'fiado') ? 'fiado' : 'contado';
+  const medio    = medioDePago(forma);
   const cliente  = document.getElementById('cliente').value;
   const obs      = document.getElementById('observaciones').value.trim();
 
@@ -335,10 +340,10 @@ async function cargarUltimas() {
       cont.innerHTML = '<div class="vacio">Todavía no hay ventas</div>';
       return;
     }
-    let html = '<table><thead><tr><th>#</th><th>Tipo</th><th class="num">Total</th><th>Hora</th></tr></thead><tbody>';
+    let html = '<table><thead><tr><th>#</th><th>Forma de pago</th><th class="num">Total</th><th>Hora</th></tr></thead><tbody>';
     for (const v of vs) {
       html += '<tr><td>' + v.venta_id + '</td>' +
-              '<td><span class="etiqueta ' + v.tipo + '">' + v.tipo + '</span></td>' +
+              '<td>' + etiquetaFormaPago(v) + '</td>' +
               '<td class="num">' + plata(v.total) + '</td>' +
               '<td>' + fechaCorta(v.fecha) + '</td></tr>';
     }
@@ -350,3 +355,10 @@ async function cargarUltimas() {
 }
 
 iniciar();
+
+/** Muestra la forma de pago: contado(efectivo/virtual/tarjeta) o fiado. */
+function etiquetaFormaPago(v) {
+  if (v.tipo === 'fiado') return '<span class="etiqueta fiado">fiado</span>';
+  const m = v.medio_pago || 'efectivo';
+  return '<span class="etiqueta ' + m + '">' + m + '</span>';
+}

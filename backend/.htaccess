@@ -1,0 +1,16 @@
+# Seguridad: nadie desde afuera puede abrir los archivos internos del backend.
+# La API (backend/public) SI es accesible; lo que bloqueamos es config.php,
+# la carpeta src/ y todo lo demas.
+
+# Bloquear config.php y config.local.php
+<FilesMatch "^config.*\.php$">
+  Require all denied
+</FilesMatch>
+
+# Bloquear toda la carpeta src/ (el codigo PHP interno no se navega directo)
+RedirectMatch 403 ^.*/src/.*$
+
+# Bloquear archivos sql por las dudas
+<FilesMatch "\.sql$">
+  Require all denied
+</FilesMatch>
